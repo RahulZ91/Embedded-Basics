@@ -1,0 +1,38 @@
+Learnings:
+
+1️⃣ Polling vs Interrupt (ISR)
+Feature	Polling	Interrupt (ISR)
+How it works	CPU continuously reads the button state in a loop	Button press triggers an automatic callback
+CPU usage	High (constantly checking)	Low (CPU can do other tasks until interrupt occurs)
+Responsiveness	Depends on loop speed; might miss short presses	Immediate response on event (edge-triggered)
+Code simplicity	Simple for very basic tasks	Slightly more complex (setup EXTI, callback, flags)
+Best use case	When timing isn’t critical or MCU is idle	When multiple tasks run or precise response needed
+2️⃣ Learning Points from the Code
+
+EXTI Callback is non-blocking:
+
+ISR only sets a flag; main loop handles the actual action (turning LED ON, delaying, etc.).
+
+Keeps MCU responsive and avoids problems with HAL_Delay() inside ISR.
+
+Use flags for communication:
+
+Flag (button_pressed) connects the ISR and main loop safely.
+
+Correct edge detection and pull configuration:
+
+Nucleo F446RE user button is active-low → use falling edge with pull-up resistor.
+
+Main loop handles timing:
+
+Delays, LED toggling, or other tasks should be in the main loop, not inside ISR.
+
+Efficiency:
+
+Polling wastes CPU cycles.
+
+Interrupt-driven design lets the MCU do other work and respond immediately when the button is pressed.
+
+3️⃣ Key Takeaway
+
+Using interrupts with a flag is more efficient and responsive than polling. The ISR should be short and lightweight, while the main loop performs the action, making your MCU program scalable, efficient, and reliable.
