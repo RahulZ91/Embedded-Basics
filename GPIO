@@ -1,0 +1,4 @@
+How to setup the project that presses the user key and the user LED is toggled:
+There are two approaches to this:
+1. Polling method
+2. ISR Interrupt Service Routine
