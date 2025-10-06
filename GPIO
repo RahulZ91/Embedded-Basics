@@ -2,3 +2,94 @@ How to setup the project that presses the user key and the user LED is toggled:
 There are two approaches to this:
 1. Polling method
 2. ISR Interrupt Service Routine
+
+STM32F446RE: Button Interrupt (ISR) LED Toggle — Key Learnings
+1. Hardware Basics
+
+User Button (B1) → PC13, active-low (pressed = 0 V).
+
+User LED (LD2) → PA5, output (logic high = LED ON).
+
+2. Polling vs. Interrupt
+
+Polling = continuously check pin state inside while(1).
+
+Simple but wastes CPU time.
+
+Interrupt (ISR) = hardware triggers CPU only when the button is pressed.
+
+Efficient, professional method for event-driven design.
+
+3. EXTI (External Interrupt) Setup
+
+Each GPIO pin can be linked to an EXTI line.
+
+PC13 uses EXTI line 13 → handled by EXTI15_10_IRQHandler().
+
+4. CubeMX / CubeIDE Configuration
+
+Set PA5 → GPIO_Output.
+
+Set PC13 → GPIO_EXTI13 (enables external interrupt).
+
+Enable NVIC interrupt → EXTI line[15:10].
+
+Generate code — CubeIDE auto-creates interrupt handler skeletons.
+
+5. Interrupt Flow
+
+Button press → logic LOW on PC13 → EXTI13 triggered.
+
+Hardware calls → EXTI15_10_IRQHandler() (auto-generated).
+
+That calls → HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_13);
+
+HAL internally calls → HAL_GPIO_EXTI_Callback(GPIO_PIN_13);
+
+You implement this callback to define what happens.
+
+6. Implementing the Callback
+
+In your main.c (or a user C file):
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  if (GPIO_Pin == GPIO_PIN_13)
+  {
+    HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5); // Toggle LED
+  }
+}
+
+
+This replaces the weak default function inside HAL.
+
+7. Debouncing
+
+Mechanical buttons can bounce (multiple quick triggers).
+Simple fix:
+
+HAL_Delay(50);
+if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13) == GPIO_PIN_RESET)
+{
+  HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+}
+
+8. Main Loop After ISR Setup
+int main(void)
+{
+  HAL_Init();
+  SystemClock_Config();
+  MX_GPIO_Init();
+  while (1)
+  {
+    // Empty: ISR handles the button
+  }
+}
+
+9. Key HAL Constants
+Constant	Meaning	Logic
+GPIO_PIN_SET	High	3.3 V
+GPIO_PIN_RESET	Low	0 V
+🏁 Summary of the Concept
+
+You used STM32’s EXTI (External Interrupt) feature to detect a button press without polling. When PC13 goes low, an interrupt fires, HAL calls your custom callback, and the LED toggles. This event-driven pattern is foundational for responsive embedded systems.
